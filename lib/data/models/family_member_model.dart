@@ -7,6 +7,7 @@ class FamilyMember {
   final int? sequenceNumber; // Mark as nullable
   final int? sonsCount; // Mark as nullable
   List<FamilyMember> children; // List to hold children
+  bool isExpanded = false; // Add this line to your FamilyMember model
 
   FamilyMember({
     required this.id,
@@ -27,9 +28,9 @@ class FamilyMember {
       fullName:
           json['full_name'] ?? '', // Provide a default value or handle null
       gender: json['gender'] ?? '', // Provide a default value or handle null
-      isAlive: json['isAlive'] ?? '', // Provide a default value or handle null
-      sequenceNumber: json['sequenceNumber'], // This can be null
-      sonsCount: json['sonsCount'], // This can be null
+      isAlive: json['is_alive'] ?? '', // Provide a default value or handle null
+      sequenceNumber: json['sequance_number'], // This can be null
+      sonsCount: json['sons_count'], // This can be null
       children: (json['children'] as List?)
               ?.map((child) => FamilyMember.fromJson(child))
               .toList() ??

@@ -43,41 +43,48 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Family Tree'),
-      ),
-      body: BlocBuilder<FamilyTreeCubit, List<FamilyMember>>(
-        builder: (context, familyMembers) {
-          if (familyMembers.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          } else {
-            _buildGraph(familyMembers);
+      body: Stack(
+        children: [
+          Image.asset(
+            'assets/images/background.png',
+            width: MediaQuery.sizeOf(context).width,
+            height: MediaQuery.sizeOf(context).height,
+            fit: BoxFit.cover,
+          ),
+          BlocBuilder<FamilyTreeCubit, List<FamilyMember>>(
+            builder: (context, familyMembers) {
+              if (familyMembers.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              } else {
+                _buildGraph(familyMembers);
 
-            if (graph.nodes.isEmpty) {
-              return const Center(child: Text("No family members found."));
-            }
+                if (graph.nodes.isEmpty) {
+                  return const Center(child: Text("No family members found."));
+                }
 
-            return InteractiveViewer(
-              constrained: false,
-              boundaryMargin: const EdgeInsets.all(1000),
-              minScale: 0.01,
-              maxScale: 5.6,
-              transformationController: _transformationController,
-              child: GraphView(
-                graph: graph,
-                algorithm:
-                    BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                builder: (Node node) {
-                  if (node.key != null && node.key!.value is FamilyMember) {
-                    var familyMember = node.key!.value as FamilyMember;
-                    return _buildNodeWidget(familyMember);
-                  }
-                  return Container(); // Return an empty container if the node is invalid
-                },
-              ),
-            );
-          }
-        },
+                return InteractiveViewer(
+                  constrained: false,
+                  boundaryMargin: const EdgeInsets.all(double.infinity),
+                  minScale: 0.01,
+                  maxScale: 5.6,
+                  transformationController: _transformationController,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: BuchheimWalkerAlgorithm(
+                        builder, TreeEdgeRenderer(builder)),
+                    builder: (Node node) {
+                      if (node.key != null && node.key!.value is FamilyMember) {
+                        var familyMember = node.key!.value as FamilyMember;
+                        return _buildNodeWidget(familyMember);
+                      }
+                      return Container(); // Return an empty container if the node is invalid
+                    },
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -103,22 +110,84 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
 
   // Updated widget to show '+' icon if the member has children
   Widget _buildNodeWidget(FamilyMember member) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {},
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FittedBox(
+                  child: Text(member.firstName,
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                ),
+                Container(
+                  width: 50,
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(25),
+                    ),
+                    color: nodeColor(
+                      gender: member.gender,
+                      isAlive: member.isAlive,
+                    ),
+                  ),
+                  child: Center(
+                    child: FittedBox(
+                      child: Text(
+                        member.sequenceNumber.toString(),
+                        style: TextStyle(fontSize: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (member.gender == "Male" && member.sonsCount! > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Visibility(
+              visible: member.children.isNotEmpty,
+              replacement: InkWell(
+                onTap: () async {},
+                child: const Icon(
+                  Icons.add,
+                  size: 18,
+                ),
+              ),
+              child: InkWell(
+                onTap: () async {},
+                child: const Icon(
+                  Icons.minimize,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
     return GestureDetector(
       onTap: () {
-        if (member.children == null || member.children.isEmpty) {
-          context
-              .read<FamilyTreeCubit>()
-              .fetchChildren(member.id); // Fetch children if not loaded
-        }
+        print("object");
+        context.read<FamilyTreeCubit>().fetchChildren(member.id);
       },
       child: Container(
-        width: 120,
-        height: 60,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: Colors.blue.shade100,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blueAccent),
+          color: Color(0xFFCE9D4D),
+          borderRadius: BorderRadius.circular(100),
         ),
         child: Stack(
           children: [
@@ -131,7 +200,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
               ),
             ),
             if (member.children == null || member.children.isEmpty)
-              Positioned(
+              const Positioned(
                 top: 0,
                 right: 0,
                 child: Icon(
@@ -145,4 +214,28 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       ),
     );
   }
+}
+
+Color nodeColor({
+  required String gender,
+  String? isAlive,
+}) {
+  Color edgeColor;
+  if (gender == "Male") {
+    if (isAlive == "N") {
+      edgeColor = const Color(0xff90E3FF);
+    } else {
+      edgeColor = const Color(0xff00BFFF);
+    }
+  } else if (gender == "Female") {
+    if (isAlive == "N") {
+      edgeColor = const Color(0xffFFB6EF);
+    } else {
+      edgeColor = const Color(0xffF20ECD);
+    }
+  } else {
+    edgeColor = Colors.pink;
+  }
+
+  return edgeColor;
 }
