@@ -6,6 +6,8 @@ import '../../data/cubit/family_tree_cubit.dart';
 import '../../data/models/family_member_model.dart';
 
 class FamilyTreeScreen extends StatefulWidget {
+  const FamilyTreeScreen({super.key});
+
   @override
   _FamilyTreeScreenState createState() => _FamilyTreeScreenState();
 }
@@ -21,10 +23,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
 
   final TransformationController _transformationController =
       TransformationController();
+
   @override
   void initState() {
     super.initState();
-    // Fetch the root member when the view is initialized
     context.read<FamilyTreeCubit>().fetchRootMember();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _centerRootNode();
@@ -42,33 +44,29 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Family Tree'),
+        title: const Text('Family Tree'),
       ),
       body: BlocBuilder<FamilyTreeCubit, List<FamilyMember>>(
         builder: (context, familyMembers) {
           if (familyMembers.isEmpty) {
-            return Center(
-              child: CircularProgressIndicator(),
-            ); // Show a loading indicator
+            return const Center(child: CircularProgressIndicator());
           } else {
-            _buildGraph(familyMembers); // Build the graph with family members
+            _buildGraph(familyMembers);
 
-            // Ensure the graph has nodes before rendering
             if (graph.nodes.isEmpty) {
-              return Center(
-                child: Text("No family members found."),
-              );
+              return const Center(child: Text("No family members found."));
             }
 
-            return Container(
-              height: MediaQuery.of(context).size.height *
-                  0.7, // Adjust height as needed
+            return InteractiveViewer(
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(1000),
+              minScale: 0.01,
+              maxScale: 5.6,
+              transformationController: _transformationController,
               child: GraphView(
                 graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(
-                  builder,
-                  TreeEdgeRenderer(builder),
-                ),
+                algorithm:
+                    BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
                 builder: (Node node) {
                   if (node.key != null && node.key!.value is FamilyMember) {
                     var familyMember = node.key!.value as FamilyMember;
@@ -84,7 +82,6 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     );
   }
 
-  // Build the graph from the family members list
   void _buildGraph(List<FamilyMember> familyMembers) {
     graph.nodes.clear();
     graph.edges.clear();
@@ -104,35 +101,45 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     }
   }
 
-  // Build the widget for each node (family member)
+  // Updated widget to show '+' icon if the member has children
   Widget _buildNodeWidget(FamilyMember member) {
     return GestureDetector(
       onTap: () {
         if (member.children == null || member.children.isEmpty) {
-          // Fetch children if not already loaded
-          context.read<FamilyTreeCubit>().fetchChildren(member.id);
+          context
+              .read<FamilyTreeCubit>()
+              .fetchChildren(member.id); // Fetch children if not loaded
         }
       },
       child: Container(
-        width: 60, // Increased width for better visibility
-        height: 60, // Increased height for better visibility
-        padding: EdgeInsets.all(8),
+        width: 120,
+        height: 60,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.blue.shade100,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.blueAccent),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Center the content
+        child: Stack(
           children: [
-            Text(
-              member.fullName ?? 'Unknown',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center, // Center the text
+            Center(
+              child: Text(
+                member.fullName ?? 'Unknown',
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ),
-            // Uncomment to show icon for expandable members
-            /* if (member.sonsCount != null && member.sonsCount > 0)
-              Icon(Icons.add, size: 16),*/
+            if (member.children == null || member.children.isEmpty)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.add_circle, // Plus icon
+                  color: Colors.green,
+                  size: 16,
+                ),
+              ),
           ],
         ),
       ),

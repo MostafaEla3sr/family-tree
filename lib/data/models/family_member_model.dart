@@ -23,9 +23,9 @@ class FamilyMember {
     return FamilyMember(
       id: json['id'],
       firstName:
-          json['firstName'] ?? '', // Provide a default value or handle null
+          json['first_name'] ?? '', // Provide a default value or handle null
       fullName:
-          json['fullName'] ?? '', // Provide a default value or handle null
+          json['full_name'] ?? '', // Provide a default value or handle null
       gender: json['gender'] ?? '', // Provide a default value or handle null
       isAlive: json['isAlive'] ?? '', // Provide a default value or handle null
       sequenceNumber: json['sequenceNumber'], // This can be null
